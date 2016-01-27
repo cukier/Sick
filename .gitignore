@@ -1,0 +1,72 @@
+#################
+## Eclipse
+#################
+
+*.pydevproject
+.project
+.metadata
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.classpath
+.settings/
+.loadpath
+[Dd]ebug/
+[Rr]elease/
+
+# External tool builders
+.externalToolBuilders/
+
+# Locally stored "Eclipse launch configurations"
+*.launch
+
+# CDT-specific
+.cproject
+
+# PDT-specific
+.buildpath
+
+
+#################
+## CCS C Compiler
+#################
+
+*.ccspjt
+*.cof
+*.err
+*.esym
+*.hex
+*.lst
+*.xsym
+*.PWI
+*.xlsx
+
+#################
+## ISIS
+#################
+
+*.DBK
+*.SDF
+
+#############
+## Windows detritus
+#############
+
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+# Folder config file
+Desktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+#############
+## Open Office
+#############
+.~lock*
