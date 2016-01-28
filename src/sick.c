@@ -141,7 +141,7 @@ int make_transaction(int address, int command, int *data) {
 }
 
 int init_encoder(void) {
-	int ret = ERROR, cont = 10;
+	int ret = ERROR, cont = 20;
 	long t1;
 	int req[REQUEST_SIZE], data[3];
 
@@ -159,6 +159,7 @@ int init_encoder(void) {
 		putc(0xE8);
 		putc(0x69);
 		putc(0x3F);
+		delay_us(50);
 	} while (--cont);
 //	send_command(GENERAL_ADDRESS, ENCODER_COMMAND, req, data);
 	delay_ms(ENCODER_INIT_TIME);
