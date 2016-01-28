@@ -114,8 +114,8 @@ int send_request(int *req, int size) {
 	return i;
 }
 
-int send_command(int command, int *data) {
-	int req[8], size;
+int send_command(int command, int *req, int *data) {
+	int size;
 
 	size = make_request(command, req, data);
 	send_request(req, size);
@@ -125,12 +125,13 @@ int send_command(int command, int *data) {
 
 int make_transaction(int command, int *data) {
 	long time_out = 0xFFFF;
+	int request[REQUEST_SIZE];
 
 	received = FALSE;
-	send_command(command, data);
+	send_command(command, request, data);
 
 	while (time_out-- && !received)
-		delay_us(10);
+		;
 
 	if (!time_out)
 		return ERROR;
@@ -138,22 +139,26 @@ int make_transaction(int command, int *data) {
 	return 0;
 }
 
-int init_encoder(int cont) {
-	int ret;
-	int *data = '\0';
+int init_encoder(int *req, int *data) {
+	int ret = ERROR;
+	long t1;
 
-	reset_encoder(2000);
+	reset_encoder(ENCODER_RESET_TIME);
 	delay_ms(WAIT_TIME);
-	make_transaction(ENCODER_RESET, data);
-	delay_ms(20);
-	ret = ERROR;
+//	make_transaction(ENCODER_RESET, data);
+	send_command(ENCODER_RESET, req, data);
+	delay_ms(ENCODER_INIT_TIME);
+	setup_timer_1(0);
+	setup_timer_1(T1_INTERNAL | T1_DIV_BY_2);
 
 	do {
-		ret = make_transaction(READ_SERIAL_NR, data);
-		delay_ms(1);
-	} while (ret == ERROR || --cont);
+//		ret = make_transaction(READ_SERIAL_NR, data);
+		send_command(READ_SERIAL_NR, req, data);
+		t1 = get_timer1();
+		delay_us(1000);
+	} while (ret == ERROR && t1 < T1_10MS);
 
-	if (!cont)
+	if (t1 >= T1_10MS)
 		return ERROR;
 
 	return 0;

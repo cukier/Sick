@@ -26,9 +26,9 @@
 #ifndef ENCODER_PIN
 #define ENCODER_PIN					PIN_C0
 #endif
-//REQUEST ERROR
+//REQUEST/RESPONSE
 #define ERROR						0xFF
-//COMM
+#define REQUEST_SIZE				8
 #define BUFFER_SIZE					25
 //SET ELECTRICAL INTERFACE
 #define MODE_TTL					0x00
@@ -38,6 +38,10 @@
 #define MODE_180_B					0x01
 #define MODE_180_A					0x02
 #define MODE_270_AB					0x03
+//TEMPOS
+#define ENCODER_RESET_TIME			2000
+#define ENCODER_INIT_TIME			20
+#define T1_10MS						50000
 #ifndef WAIT_TIME
 #define WAIT_TIME					10
 #endif
@@ -54,7 +58,7 @@ int reset_encoder(long i_time);
 int crc_sum(int *data, int size);
 int make_request(int command, int *req, int *data);
 int send_request(int *req, int size);
-int send_command(int command, int *data);
+int send_command(int command, int *req, int *data);
 int make_transaction(int command);
 int init_encoder(void);
 int init_mcu(void);
