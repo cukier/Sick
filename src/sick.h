@@ -22,6 +22,10 @@
 #define READ_ZERO_MECH_ELEC			0x9C
 #define	READ_ELECTRICAL_INTERFACE	0x9D
 #define ACCESS_CODE					0x69
+//SICK PROGRAMMER
+#define ENCODER_RESET_PS			0xC0
+#define ENCODER_COMMAND				0x41
+#define GENERAL_ADDRESS				0xFF
 //ENCODER BUS
 #ifndef ENCODER_PIN
 #define ENCODER_PIN					PIN_C0
@@ -56,10 +60,10 @@ int turn_on_encoder(void);
 int turn_off_encoder(void);
 int reset_encoder(long i_time);
 int crc_sum(int *data, int size);
-int make_request(int command, int *req, int *data);
+int make_request(int address, int command, int *req, int *data);
 int send_request(int *req, int size);
-int send_command(int command, int *req, int *data);
-int make_transaction(int command);
+int send_command(int address, int command, int *req, int *data);
+int make_transaction(int address, int command, int *data);
 int init_encoder(void);
 int init_mcu(void);
 

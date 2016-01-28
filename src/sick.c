@@ -52,10 +52,10 @@ int crc_sum(int *data, int size) {
 	return ret;
 }
 
-int make_request(int command, int *req, int *data) {
-	int crc, ret;
+int make_request(int address, int command, int *req, int *data) {
+	int ret;
 
-	req[0] = ENCODER_ADDRESS;
+	req[0] = address;
 	req[1] = command;
 
 	switch (command) {
@@ -85,6 +85,7 @@ int make_request(int command, int *req, int *data) {
 		req[4] = crc_sum(req, 4);
 		ret = 5;
 		break;
+	case ENCODER_COMMAND:
 	case SET_ZERO_MECHANICAL:
 		req[2] = data[0];
 		req[3] = data[1];
@@ -114,21 +115,21 @@ int send_request(int *req, int size) {
 	return i;
 }
 
-int send_command(int command, int *req, int *data) {
+int send_command(int address, int command, int *req, int *data) {
 	int size;
 
-	size = make_request(command, req, data);
+	size = make_request(address, command, req, data);
 	send_request(req, size);
 
 	return size;
 }
 
-int make_transaction(int command, int *data) {
+int make_transaction(int address, int command, int *data) {
 	long time_out = 0xFFFF;
 	int request[REQUEST_SIZE];
 
 	received = FALSE;
-	send_command(command, request, data);
+	send_command(address, command, request, data);
 
 	while (time_out-- && !received)
 		;
@@ -139,21 +140,34 @@ int make_transaction(int command, int *data) {
 	return 0;
 }
 
-int init_encoder(int *req, int *data) {
-	int ret = ERROR;
+int init_encoder(void) {
+	int ret = ERROR, cont = 10;
 	long t1;
+	int req[REQUEST_SIZE], data[3];
+
+	data[0] = 0x00;
+	data[1] = 0xE8;
 
 	reset_encoder(ENCODER_RESET_TIME);
 	delay_ms(WAIT_TIME);
-//	make_transaction(ENCODER_RESET, data);
-	send_command(ENCODER_RESET, req, data);
+//	putc(ENCODER_RESET_PS);
+	putc(ENCODER_RESET);
+	do {
+		putc(0xFF);
+		putc(0x41);
+		putc(0x00);
+		putc(0xE8);
+		putc(0x69);
+		putc(0x3F);
+	} while (--cont);
+//	send_command(GENERAL_ADDRESS, ENCODER_COMMAND, req, data);
 	delay_ms(ENCODER_INIT_TIME);
 	setup_timer_1(0);
 	setup_timer_1(T1_INTERNAL | T1_DIV_BY_2);
 
 	do {
 //		ret = make_transaction(READ_SERIAL_NR, data);
-		send_command(READ_SERIAL_NR, req, data);
+		send_command(GENERAL_ADDRESS, ENCODER_COMMAND, req, data);
 		t1 = get_timer1();
 		delay_us(1000);
 	} while (ret == ERROR && t1 < T1_10MS);

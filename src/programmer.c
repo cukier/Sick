@@ -29,7 +29,7 @@ int main(void) {
 			b0_ctrl = FALSE;
 			delay_ms(100);
 			if (!input(PIN_B0)) {
-				init_encoder(request, data);
+				init_encoder();
 			}
 		} else if (input(PIN_B0) && !b0_ctrl) {
 			b0_ctrl = TRUE;
@@ -38,7 +38,7 @@ int main(void) {
 			b1_ctrl = FALSE;
 			delay_ms(100);
 			if (!input(PIN_B1)) {
-				send_command(READ_POSITION, request, data);
+				send_command(ENCODER_ADDRESS, READ_POSITION, request, data);
 			}
 		} else if (input(PIN_B1) && !b1_ctrl) {
 			b1_ctrl = TRUE;
