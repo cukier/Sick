@@ -11,18 +11,21 @@ MFLAGS=+FM +LN -T -A -M -Z +DF +Y=9 +STDOUT +EA
 SRC=src
 OUT=Debug
 
-GLOBALS=+GWAIT_TIMEL="5"
-
 PK2FLAGS=-E -P$(DEVICE) -M -R -J -F
 
 all: $(UNIT1)
 
-$(UNIT1): $(SRC)/$(UNIT1_FILE).c
+$(UNIT1): $(SRC)/$(UNIT1_FILE).c		
+	if [ ! -d $(OUT) ]; then mkdir $(OUT); fi
 	cp $(SRC)/*.[ch] $(OUT)
 	$(CC) $(HFLAGS) $(GLOBALS) $(OUT)/$(UNIT1_FILE).c
+	[ ! -d $(OUT)/src ] && mkdir $(OUT)/src || rm -Rvf $(OUT)/src/*
+	mv $(OUT)/*.[ch] $(OUT)/src 
 	
 burn:
 	$(PK2) $(PK2FLAGS) $(OUT)/$(UNIT1_FILE).hex
 
 clean:
-	rm $(OUT)/*
+	rm -Rvf $(OUT)/*
+
+	

@@ -45,10 +45,8 @@
 //TEMPOS
 #define ENCODER_RESET_TIME			2000
 #define ENCODER_INIT_TIME			20
-#define T1_10MS						50000
-#ifndef WAIT_TIME
 #define WAIT_TIME					10
-#endif
+#define T1_10MS						50000
 
 short received = FALSE;
 int buffer[BUFFER_SIZE];

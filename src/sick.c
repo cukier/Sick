@@ -141,7 +141,7 @@ int make_transaction(int address, int command, int *data) {
 }
 
 int init_encoder(void) {
-	int ret = ERROR, cont = 20;
+	int cont = 20;
 	long t1;
 	int req[REQUEST_SIZE], data[3];
 
@@ -150,8 +150,8 @@ int init_encoder(void) {
 
 	reset_encoder(ENCODER_RESET_TIME);
 	delay_ms(WAIT_TIME);
-//	putc(ENCODER_RESET_PS);
-	putc(ENCODER_RESET);
+	putc(ENCODER_RESET_PS);
+
 	do {
 		putc(0xFF);
 		putc(0x41);
@@ -161,17 +161,16 @@ int init_encoder(void) {
 		putc(0x3F);
 		delay_us(50);
 	} while (--cont);
-//	send_command(GENERAL_ADDRESS, ENCODER_COMMAND, req, data);
+
 	delay_ms(ENCODER_INIT_TIME);
 	setup_timer_1(0);
 	setup_timer_1(T1_INTERNAL | T1_DIV_BY_2);
 
 	do {
-//		ret = make_transaction(READ_SERIAL_NR, data);
 		send_command(GENERAL_ADDRESS, ENCODER_COMMAND, req, data);
 		t1 = get_timer1();
 		delay_us(1000);
-	} while (ret == ERROR && t1 < T1_10MS);
+	} while (t1 < T1_10MS);
 
 	if (t1 >= T1_10MS)
 		return ERROR;
