@@ -233,7 +233,7 @@ void DSF60_enable_encoder(void) {
 	return;
 }
 
-uint8_t DSF60_check(void) {
+bool DSF60_check(void) {
 	uint8_t retries;
 
 	DSF60_flush_buffer();
@@ -245,11 +245,12 @@ uint8_t DSF60_check(void) {
 	delay_ms(50);
 
 	if (buffer_index != 0) {
-		delay_ms(300);
-		return buffer_index;
+		DSF60_flush_buffer();
+		return true;
 	}
 
-	return EXIT_ERROR;
+	DSF60_flush_buffer();
+	return false;
 }
 
 bool DSF60_make_transaction(DSF60_command_t command, uint32_t arg) {
@@ -260,15 +261,15 @@ bool DSF60_make_transaction(DSF60_command_t command, uint32_t arg) {
 	n = 0;
 	pulse_width_resp = 0;
 
-	do {
-		resp = EXIT_SUCESS;
-		resp = DSF60_check();
-		delay_ms(100);
-
-		if (!retries)
-			return false;
-
-	} while (resp == EXIT_ERROR && --retries);
+//	do {
+//		resp = EXIT_SUCESS;
+//		resp = DSF60_check();
+//		delay_ms(100);
+//
+//		if (!retries)
+//			return false;
+//
+//	} while (resp == EXIT_ERROR && --retries);
 
 	DSF60_flush_buffer();
 
