@@ -5,44 +5,38 @@
  *      Author: cuki
  */
 
-#include <18F252.h>
+#include <18F25K22.h>
+#fuses  mclr, primary, intrc, pllen, nowdt
+#use delay(internal=64MHz)
 
-#fuses H4
-#use delay(Clock=40MHz, Crystal=10MHz)
-#use rs232(UART1, baud=115200, parity=E)
-//#use rs232(UART1, baud=115200)
+//#use rs232(uart1, baud=9600, parity=E, stream=sl1)
+#use rs232(uart2, baud=9600, stream=dbg)
 
 #include "sick.c"
 
 int main(void) {
+	uint16_t char_count;
+	uint8_t cont;
 
-	short b0_ctrl, b1_ctrl;
-	int data[BUFFER_SIZE], request[REQUEST_SIZE];
-
-	b0_ctrl = TRUE;
-	b1_ctrl = TRUE;
-	init_mcu();
+	DSF60_init_encoder();
+	enable_interrupts(GLOBAL);
 	delay_ms(50);
+	char_count = DSF60_check();
+	fprintf(dbg, "\n%u ", DSF60_check());
 
-	while (TRUE) {
-		if (!input(PIN_B0) && b0_ctrl) {
-			b0_ctrl = FALSE;
-			delay_ms(100);
-			if (!input(PIN_B0)) {
-				init_encoder();
-			}
-		} else if (input(PIN_B0) && !b0_ctrl) {
-			b0_ctrl = TRUE;
+	if (char_count != 0) {
+		for (cont = 0; cont < char_count; ++cont) {
+			if (cont != 0 && !(cont % 8))
+				fprintf(dbg, "\n");
+			fprintf(dbg, "%c", buffer[cont]);
 		}
-		if (!input(PIN_B1) && b1_ctrl) {
-			b1_ctrl = FALSE;
-			delay_ms(100);
-			if (!input(PIN_B1)) {
-				send_command(ENCODER_ADDRESS, READ_POSITION, request, data);
-			}
-		} else if (input(PIN_B1) && !b1_ctrl) {
-			b1_ctrl = TRUE;
-		}
+
+		fprintf(dbg, "\n");
+	}
+
+	while (true) {
+//		delay_ms(500);
+//		output_toggle(ENCODER_EN);
 	}
 
 	return 0;

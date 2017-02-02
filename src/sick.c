@@ -6,45 +6,77 @@
  */
 
 #include "sick.h"
+#include <stdint.h>
+#include <stdbool.h>
+#include <stdlibm.h>
+
+#define T0_REG	55535
+
+bool t_ok;
+uint8_t *buffer;
+uint16_t buffer_index;
+
+#ifdef __PCH__
+//#use rs232(uart1, baud=115200, parity=E, stream=sl1)
+#use rs232(uart1, baud=115200, parity=E, stream=sl1)
+#endif
 
 #INT_RDA
-void isr_rda() {
+void DSF60_isr_rda() {
+	buffer = (uint8_t *) realloc(buffer, buffer_index + 1);
+	buffer[buffer_index] = fgetc(sl1);
+	buffer_index++;
+
+#ifdef __PCH__
+//	set_timer0(0);
+//	setup_timer_0(T0_INTERNAL | T0_DIV_8);
 	clear_interrupt(INT_RDA);
-	buffer[pos++] = getc();
-
-	if (pos >= BUFFER_SIZE)
-		pos = 0;
-
-	set_timer0(0);
-	setup_timer_0(T0_INTERNAL | T0_DIV_4);
+#endif
 }
 
+#ifdef __PCH__
 #INT_TIMER0
-void isr_tmr0() {
+#endif
+void DSF60_isr_tmr0() {
+#ifdef __PCH__
 	clear_interrupt(INT_TIMER0);
 	setup_timer_0(T0_OFF);
-	received = TRUE;
+#endif
+	t_ok = true;
 }
 
-int turn_on_encoder(void) {
-	output_high(ENCODER_PIN);
-	return 0;
+void DSF60_send_request(uint8_t *req, uint16_t size) {
+	uint16_t cont;
+
+	for (cont = 0; cont < size; ++cont)
+		fputc(req[cont], sl1);
+
+	return;
 }
 
-int turn_off_encoder(void) {
-	output_low(ENCODER_PIN);
-	return 0;
+void DSF60_flush_buffer(void) {
+//	free(buffer);
+	buffer_index = 0;
+
+	return;
 }
 
-int reset_encoder(long i_time) {
-	turn_off_encoder();
-	delay_ms(i_time);
-	turn_on_encoder();
-	return 0;
+void DSF60_init_encoder(void) {
+#ifdef __PCH__
+	clear_interrupt(INT_TIMER0);
+	enable_interrupts(INT_TIMER0);
+
+	clear_interrupt(INT_RDA);
+	enable_interrupts(INT_RDA);
+#endif
+
+	DSF60_flush_buffer();
+
+	return;
 }
 
-int crc_sum(int *data, int size) {
-	int i = 0, ret = 0;
+uint8_t DSF60_crc_sum(uint8_t *data, uint16_t size) {
+	uint8_t i = 0, ret = 0;
 
 	for (i = 0; i < size; ++i)
 		ret ^= data[i];
@@ -52,143 +84,116 @@ int crc_sum(int *data, int size) {
 	return ret;
 }
 
-int make_request(int address, int command, int *req, int *data) {
-	int ret;
+void DSF60_encoder_reset(void) {
+	uint8_t *req;
 
-	req[0] = address;
-	req[1] = command;
+	req = (uint8_t *) malloc(3 * sizeof(uint8_t));
+	req[0] = DSF60_ADDRESS;
+	req[1] = DSF60_COMMAND_ENCODER_RESET;
+	req[2] = DSF60_crc_sum(req, 2);
+	DSF60_send_request(req, 3);
+	free(req);
+
+	return;
+}
+
+void DSF60_read_serial_number(void) {
+	uint8_t *req;
+
+	req = (uint8_t *) malloc(3 * sizeof(uint8_t));
+	req[0] = DSF60_ADDRESS;
+	req[1] = DSF60_COMMAND_READ_SERIAL_NUMBER;
+	req[2] = DSF60_crc_sum(req, 2);
+	DSF60_send_request(req, 3);
+	free(req);
+
+	return;
+}
+
+void DSF60_read_position(void) {
+	uint8_t *req;
+
+	req = (uint8_t *) malloc(4 * sizeof(uint8_t));
+	req[0] = DSF60_ADDRESS;
+	req[1] = DSF60_COMMAND_READ_POSITION;
+	req[2] = 0x21; //FORMAT
+	req[3] = DSF60_crc_sum(req, 3);
+	DSF60_send_request(req, 4);
+	free(req);
+
+	return;
+}
+
+uint8_t DSF60_read_encoder_type(void) {
+	uint8_t *req;
+
+	req = (uint8_t *) malloc(3 * sizeof(uint8_t));
+	req[0] = DSF60_ADDRESS;
+	req[1] = DSF60_COMMAND_READ_ENCODER_TYPE;
+	req[2] = DSF60_crc_sum(req, 2);
+	DSF60_send_request(req, 3);
+	free(req);
+
+	return EXIT_SUCESS;
+
+}
+
+void DSF60_disable_encoder(void) {
+	output_high(ENCODER_EN);
+
+	return;
+}
+
+void DSF60_enable_encoder(void) {
+	output_low(ENCODER_EN);
+
+	return;
+}
+
+uint8_t DSF60_check(void) {
+	uint8_t retries;
+
+	DSF60_flush_buffer();
+	DSF60_disable_encoder();
+	delay_ms(2000);
+	DSF60_enable_encoder();
+	delay_ms(20);
+	DSF60_read_encoder_type();
+	delay_ms(50);
+
+	if (buffer_index != 0) {
+		delay_ms(300);
+		return buffer_index;
+	}
+
+	return EXIT_ERROR;
+}
+
+bool DSF60_make_transaction(DSF60_command_t command) {
+	uint8_t retries, resp;
+
+	retries = 200;
+
+	do {
+		resp = EXIT_SUCESS;
+		resp = DSF60_check();
+		delay_ms(100);
+
+		if (!retries)
+			return false;
+
+	} while (resp == EXIT_ERROR && --retries);
+
+	DSF60_flush_buffer();
 
 	switch (command) {
-	default:
-	case ENCODER_RESET:
-	case READ_SERIAL_NR:
-	case READ_ENCODER_TYPE:
-	case READ_ZERO_MECH_ELEC:
-	case READ_ELECTRICAL_INTERFACE:
-		req[2] = crc_sum(req, 2);
-		ret = 3;
+	case DSF60_COMMAND_ENCODER_RESET:
+		DSF60_encoder_reset();
 		break;
-	case READ_POSITION:
-		req[2] = 0x21;
-		req[3] = crc_sum(req, 3);
-		ret = 4;
-		break;
-	case ZERO_SET_FUN:
-		req[2] = ACCESS_CODE;
-		req[3] = crc_sum(req, 3);
-		ret = 4;
-		break;
-	case SET_ELECTRICAL_INTERFACE:
-	case SET_ZERO_ELECTRICAL:
-		req[2] = data[0];
-		req[3] = ACCESS_CODE;
-		req[4] = crc_sum(req, 4);
-		ret = 5;
-		break;
-	case ENCODER_COMMAND:
-	case SET_ZERO_MECHANICAL:
-		req[2] = data[0];
-		req[3] = data[1];
-		req[4] = ACCESS_CODE;
-		req[5] = crc_sum(req, 5);
-		ret = 6;
-		break;
-	case SET_NUMBER_LINES:
-		req[2] = data[0];
-		req[3] = data[1];
-		req[4] = data[2];
-		req[5] = ACCESS_CODE;
-		req[6] = crc_sum(req, 6);
-		ret = 7;
+	case DSF60_COMMAND_READ_ENCODER_TYPE:
+		DSF60_read_encoder_type();
 		break;
 	}
 
-	return ret;
-}
-
-int send_request(int *req, int size) {
-	int i;
-
-	for (i = 0; i < size; ++i)
-		putc(req[i]);
-
-	return i;
-}
-
-int send_command(int address, int command, int *req, int *data) {
-	int size;
-
-	size = make_request(address, command, req, data);
-	send_request(req, size);
-
-	return size;
-}
-
-int make_transaction(int address, int command, int *data) {
-	long time_out = 0xFFFF;
-	int request[REQUEST_SIZE];
-
-	received = FALSE;
-	send_command(address, command, request, data);
-
-	while (time_out-- && !received)
-		;
-
-	if (!time_out)
-		return ERROR;
-
-	return 0;
-}
-
-int init_encoder(void) {
-	int cont = 20;
-	long t1;
-	int req[REQUEST_SIZE], data[3];
-
-	data[0] = 0x00;
-	data[1] = 0xE8;
-
-	reset_encoder(ENCODER_RESET_TIME);
-	delay_ms(WAIT_TIME);
-	putc(ENCODER_RESET_PS);
-
-	do {
-		putc(0xFF);
-		putc(0x41);
-		putc(0x00);
-		putc(0xE8);
-		putc(0x69);
-		putc(0x3F);
-		delay_us(50);
-	} while (--cont);
-
-	delay_ms(ENCODER_INIT_TIME);
-	setup_timer_1(0);
-	setup_timer_1(T1_INTERNAL | T1_DIV_BY_2);
-
-	do {
-		send_command(GENERAL_ADDRESS, ENCODER_COMMAND, req, data);
-		t1 = get_timer1();
-		delay_us(1000);
-	} while (t1 < T1_10MS);
-
-	if (t1 >= T1_10MS)
-		return ERROR;
-
-	return 0;
-}
-
-int init_mcu(void) {
-
-	pos = 0;
-	received = FALSE;
-
-	output_high(ENCODER_PIN);
-
-	clear_interrupt(INT_TIMER0);
-	clear_interrupt(INT_RDA);
-	setup_timer_0(T0_OFF);
-	set_timer0(0);
-
-	return 0;
+	return true;
 }
