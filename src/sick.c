@@ -254,12 +254,13 @@ bool DSF60_check(void) {
 }
 
 bool DSF60_make_transaction(DSF60_command_t command, uint32_t arg) {
-	uint8_t retries, resp, n, cont;
+	uint8_t retries, resp, n, cont, t;
 	uint16_t pulse_width_resp;
 
 	retries = 200;
 	n = 0;
 	pulse_width_resp = 0;
+	t = 1;
 
 //	do {
 //		resp = EXIT_SUCESS;
@@ -280,22 +281,27 @@ bool DSF60_make_transaction(DSF60_command_t command, uint32_t arg) {
 	case DSF60_COMMAND_READ_SERIAL_NUMBER:
 		DSF60_read_serial_number();
 		n = 30;
+		t = 5;
 		break;
 	case DSF60_COMMAND_READ_POSITION:
 		DSF60_read_position();
 		n = 7;
+		t = 5;
 		break;
 	case DSF60_COMMAND_SET_NUMBER_OF_LINES:
 		DSF60_set_number_lines(arg);
 		n = 3;
+		t = 150;
 		break;
 	case DSF60_COMMAND_SET_ELECTRICAL_INTERFACE:
 		DSF60_set_electrical_interface((uint8_t) arg);
 		n = 3;
+		t = 5;
 		break;
 	case DSF60_COMMAND_SET_ZERO_PULSE_WIDTH_ELECTRICAL:
 		DSF60_set_zero_pulse_width_electrical((uint8_t) arg);
 		n = 3;
+		t = 80;
 		break;
 	case DSF60_COMMAND_ZERO_SET:
 		DSF60_zero_set();
@@ -304,25 +310,29 @@ bool DSF60_make_transaction(DSF60_command_t command, uint32_t arg) {
 	case DSF60_COMMAND_READ_ENCODER_TYPE:
 		DSF60_read_encoder_type();
 		n = 37;
+		t = 10;
 		break;
 	case DSF60_COMMAND_SET_ZERO_PULSE_WIDTH_MECHANICAL:
 		DSF60_set_zero_pulse_width_mechanical((uint16_t) arg);
 		n = 3;
+		t = 80;
 		break;
 	case DSF60_COMMAND_READ_ZERO_PULSE_WIDTH_ELECTRIAL_MECHANICAL:
 		DSF60_read_zero_pulse_width_electrical_mechanical();
 		n = 5;
+		t = 5;
 		break;
 	case DSF60_COMMAND_READ_ELECTRICAL_INTERFACE:
 		DSF60_read_electrical_interface();
 		n = 4;
+		t = 5;
 		break;
 	default:
 		n = 0;
 		break;
 	}
 
-	delay_ms(100);
+	delay_ms(t);
 
 	if (buffer_index != n) {
 		return false;

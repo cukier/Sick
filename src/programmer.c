@@ -32,13 +32,14 @@ int main(void) {
 			if (encoder_ok) {
 				if (pos_aux != dsf60->position) {
 					pos_aux = dsf60->position;
-					ang = ((float) dsf60->position) * 360 / 10000;
-					fprintf(dbg, "Pos: %lu %f\n", dsf60->position, ang);
+					ang = ((float) dsf60->position) * 360.0 / 10000.0;
+					fprintf(dbg, "Pos: %04lu %f\n", dsf60->position, ang);
 				}
 			} else {
 				fprintf(dbg, "encoder error\n");
 			}
 		}
+
 		delay_ms(10);
 	}
 
