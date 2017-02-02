@@ -34,6 +34,8 @@ int main(void) {
 		fprintf(dbg, "\n");
 	}
 
+	DSF60_flush_buffer();
+
 	while (true) {
 //		delay_ms(500);
 //		output_toggle(ENCODER_EN);

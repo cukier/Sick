@@ -55,7 +55,7 @@ void DSF60_send_request(uint8_t *req, uint16_t size) {
 }
 
 void DSF60_flush_buffer(void) {
-//	free(buffer);
+	free(buffer);
 	buffer_index = 0;
 
 	return;
