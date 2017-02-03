@@ -8,9 +8,6 @@
 #include "sick.h"
 #include <stdlibm.h>
 
-#define T0_REG	55535
-
-bool t_ok;
 uint8_t *buffer;
 uint16_t buffer_index;
 
@@ -335,7 +332,7 @@ bool DSF60_make_transaction(DSF60_command_t command, uint32_t arg) {
 	case DSF60_COMMAND_READ_ENCODER_TYPE:
 		DSF60_read_encoder_type();
 		n = 37;
-		t = 10;
+		t = 40;
 		break;
 	case DSF60_COMMAND_SET_ZERO_PULSE_WIDTH_MECHANICAL:
 		DSF60_set_zero_pulse_width_mechanical((uint16_t) arg);
@@ -406,8 +403,7 @@ bool DSF60_make_transaction(DSF60_command_t command, uint32_t arg) {
 			dsf60->date_code[cont] = buffer[cont + 25];
 
 		dsf60->date_code[cont] = '\0';
-		dsf60->resolution = make32(0, buffer[cont + 1], buffer[cont + 2],
-				buffer[cont + 3]);
+		dsf60->resolution = make32(0, buffer[33], buffer[34], buffer[35]);
 		break;
 	case DSF60_COMMAND_SET_ZERO_PULSE_WIDTH_MECHANICAL:
 		break;
