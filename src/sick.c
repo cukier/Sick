@@ -15,25 +15,45 @@ uint8_t *buffer;
 uint16_t buffer_index;
 
 #ifdef __PCH__
+#ifdef USE_UART1
 #use rs232(uart1, baud=115200, parity=E, stream=sl1)
+#else
+#use rs232(uart2, baud=115200, parity=E, stream=sl2)
 #endif
 
+#ifdef USE_UART1
 #INT_RDA
+#else
+#INT_RDA2
+#endif
 void DSF60_isr_rda() {
 	buffer = (uint8_t *) realloc(buffer, buffer_index + 1);
+#ifdef USE_UART1
 	buffer[buffer_index] = fgetc(sl1);
+#else
+	buffer[buffer_index] = fgetc(sl2);
+#endif
 	buffer_index++;
 
 #ifdef __PCH__
+#ifdef USE_UART1
 	clear_interrupt(INT_RDA);
+#else
+	clear_interrupt(INT_RDA2);
+#endif
 #endif
 }
 
 void DSF60_send_request(uint8_t *req, uint16_t size) {
 	uint16_t cont;
 
-	for (cont = 0; cont < size; ++cont)
+	for (cont = 0; cont < size; ++cont) {
+#ifdef USE_UART1
 		fputc(req[cont], sl1);
+#else
+		fputc(req[cont], sl2);
+#endif
+	}
 
 	return;
 }
@@ -47,8 +67,13 @@ void DSF60_flush_buffer(void) {
 
 void DSF60_init_encoder(void) {
 #ifdef __PCH__
+#ifdef USE_UART1
 	clear_interrupt(INT_RDA);
 	enable_interrupts(INT_RDA);
+#else
+	clear_interrupt(INT_RDA2);
+	enable_interrupts(INT_RDA2);
+#endif
 #endif
 
 	DSF60_flush_buffer();
@@ -418,8 +443,6 @@ bool DSF60_make_transaction(DSF60_command_t command, uint32_t arg) {
 
 		break;
 	}
-
-	DSF60_flush_buffer();
 
 	return true;
 }
