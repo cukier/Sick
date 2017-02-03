@@ -49,12 +49,20 @@ int main(void) {
 			if (encoder_ok) {
 				if (pos_aux != dsf60->position) {
 					pos_aux = dsf60->position;
-					ang = ((float) dsf60->position) * 360.0 / 10000.0;
+					ang = ((float) dsf60->position) * 360.0 / dsf60->resolution;
 					fprintf(dbg, "Pos: %04lu %f\n", dsf60->position, ang);
 				}
 			} else {
 				fprintf(dbg, "encoder error\n");
 			}
+		} else {
+			encoder_ok = DSF60_check();
+
+			if (!encoder_ok) {
+				fprintf(dbg, "encoder error\n");
+			}
+
+			delay_ms(1000);
 		}
 
 		delay_ms(10);
