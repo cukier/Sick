@@ -14,20 +14,24 @@ uint16_t buffer_index;
 #ifdef __PCH__
 #ifdef USE_UART1
 #use rs232(uart1, baud=115200, parity=E, stream=sl1)
-#else
+#elif defined USE_UART2
 #use rs232(uart2, baud=115200, parity=E, stream=sl2)
+#else
+#error "Nehuma saida serial definida para o encoder"
 #endif
 
 #ifdef USE_UART1
 #INT_RDA
-#else
+#endif
+#ifdef USE_UART2
 #INT_RDA2
 #endif
 void DSF60_isr_rda() {
 	buffer = (uint8_t *) realloc(buffer, buffer_index + 1);
 #ifdef USE_UART1
 	buffer[buffer_index] = fgetc(sl1);
-#else
+#endif
+#ifdef USE_UART2
 	buffer[buffer_index] = fgetc(sl2);
 #endif
 	buffer_index++;
@@ -35,7 +39,8 @@ void DSF60_isr_rda() {
 #ifdef __PCH__
 #ifdef USE_UART1
 	clear_interrupt(INT_RDA);
-#else
+#endif
+#ifdef USE_UART2
 	clear_interrupt(INT_RDA2);
 #endif
 #endif
@@ -47,7 +52,8 @@ void DSF60_send_request(uint8_t *req, uint16_t size) {
 	for (cont = 0; cont < size; ++cont) {
 #ifdef USE_UART1
 		fputc(req[cont], sl1);
-#else
+#endif
+#ifdef USE_UART2
 		fputc(req[cont], sl2);
 #endif
 	}
@@ -67,7 +73,8 @@ void DSF60_init_encoder(void) {
 #ifdef USE_UART1
 	clear_interrupt(INT_RDA);
 	enable_interrupts(INT_RDA);
-#else
+#endif
+#ifdef USE_UART2
 	clear_interrupt(INT_RDA2);
 	enable_interrupts(INT_RDA2);
 #endif
